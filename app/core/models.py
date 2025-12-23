@@ -1,7 +1,9 @@
 """
 Database models.
 """
+from django.conf import settings
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -39,3 +41,26 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
+
+
+class River(models.Model):
+    """River Object"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    name = models.CharField(max_length=255)
+    feature = models.CharField(max_length=255)
+    state = models.CharField(max_length=32)
+    region = models.IntegerField()
+    miles = models.DecimalField(max_digits=5, decimal_places=2)
+    geometry_type = models.CharField(max_length=255)
+
+    coordinates = ArrayField(
+        ArrayField(models.FloatField(), size=2),
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return self.name

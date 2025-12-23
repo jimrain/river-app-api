@@ -1,8 +1,12 @@
 """
 Test for models
 """
+from decimal import Decimal
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+
+from core import models
 
 
 class ModelTests(TestCase):
@@ -46,3 +50,52 @@ class ModelTests(TestCase):
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_create_river(self):
+        """Test creating a river is successful."""
+        user = get_user_model().objects.create_user(
+            'test@example.com',
+            'testpass123',
+        )
+
+        river = models.River.objects.create(
+            user=user,
+            name='Bear Creek',
+            feature='Stream',
+            state='AK',
+            region=19,
+            miles=Decimal('24.85'),
+            geometry_type='LineString',
+            coordinates=[
+                [
+                    -159.55596127142,
+                    63.8967914977418
+                ],
+                [
+                    -159.55629960491,
+                    63.8952464976259
+                ],
+                [
+                    -159.557151821688,
+                    63.8904670545064
+                ],
+                [
+                    -159.557229598028,
+                    63.8886909430781
+                ],
+                [
+                    -159.557166819625,
+                    63.8883009431258
+                ],
+                [
+                    -159.556745707866,
+                    63.887534832399
+                ],
+                [
+                    -159.55531792994,
+                    63.885438721782
+                ],
+            ]
+        )
+
+        self.assertEqual(str(river), river.name)
