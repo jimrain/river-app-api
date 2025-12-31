@@ -53,7 +53,7 @@ class River(models.Model):
     feature = models.CharField(max_length=255)
     state = models.CharField(max_length=32)
     region = models.IntegerField()
-    miles = models.DecimalField(max_digits=5, decimal_places=2)
+    miles = models.FloatField()
     geometry_type = models.CharField(max_length=255)
 
     coordinates = ArrayField(

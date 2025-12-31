@@ -1,7 +1,6 @@
 """
 Test for models
 """
-from decimal import Decimal
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
@@ -64,7 +63,7 @@ class ModelTests(TestCase):
             feature='Stream',
             state='AK',
             region=19,
-            miles=Decimal('24.85'),
+            miles=24.85,
             geometry_type='LineString',
             coordinates=[
                 [
