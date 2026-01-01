@@ -44,6 +44,11 @@ def create_river(user, **params):
     return river
 
 
+def create_user(**params):
+    """Create and return a new user."""
+    return get_user_model().objects.create_user(**params)
+
+
 class PublicRiverAPITests(TestCase):
     """Test unauthenticated API requests."""
 
@@ -62,10 +67,7 @@ class PrivateRiverApiTests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-            'user@example.com',
-            'testpass123',
-        )
+        self.user = create_user(email='user@example.com', password='test123')
         self.client.force_authenticate(self.user)
 
     def test_retrieve_river(self):
@@ -82,10 +84,8 @@ class PrivateRiverApiTests(TestCase):
 
     def test_recipe_list_limited_to_user(self):
         """Test list of recipes is limited to authenticated user."""
-        other_user = get_user_model().objects.create_user(
-            'other.example.com',
-            'password123',
-        )
+        other_user = create_user(email='other.example.com', password='test123')
+
         create_river(user=other_user)
         create_river(user=self.user)
         res = self.client.get(RIVERS_URL)
@@ -127,3 +127,85 @@ class PrivateRiverApiTests(TestCase):
         for k, v in payload.items():
             self.assertEqual(getattr(river, k), v)
         self.assertEqual(river.user, self.user)
+
+    def test_partial_update(self):
+        """Test partial update of a river."""
+        coordinates = [[-159.55596127142, 63.8967914977418]]
+        river = create_river(user=self.user,
+                             name='Owyhee',
+                             coordinates=coordinates)
+
+        payload = {'name': 'Deschutes'}
+        url = detail_url(river.id)
+        res = self.client.patch(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        river.refresh_from_db()
+        self.assertEqual(river.name, payload['name'])
+        self.assertEqual(river.coordinates, coordinates)
+        self.assertEqual(river.user, self.user)
+
+    def test_full_update(self):
+        """Test full update of river"""
+        river = create_river(
+            user=self.user,
+            feature='Stream',
+            state='OR',
+            region=1,
+            miles=47.3,
+            geometry_type='LineString',
+            name='Owyhee',
+            coordinates=[[-159.55596127142, 63.8967914977418]],
+        )
+
+        payload = {
+            'name': 'Test River',
+            'feature': 'Stream',
+            'state': 'CA',
+            "region": 2,
+            "miles": 43.7,
+            "geometry_type": 'Point',
+            "coordinates": [[-157.55596127142, 63.8967914977418]],
+        }
+        url = detail_url(river.id)
+        res = self.client.put(url, json.dumps(payload),
+                              content_type='application/json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        river.refresh_from_db()
+        for k, v in payload.items():
+            self.assertEqual(getattr(river, k), v)
+        self.assertEqual(river.user, self.user)
+
+    def test_update_user_returns_error(self):
+        """Test changing the river user results in an error."""
+        new_user = create_user(email='user2@example.com', password='test123')
+        river = create_river(user=self.user)
+
+        payload = {'user': new_user.id}
+        url = detail_url(river.id)
+        self.client.patch(url, payload)
+
+        river.refresh_from_db()
+        self.assertEqual(river.user, self.user)
+
+    def test_delete_recipe(self):
+        """Test deleting a recipe succesful."""
+        river = create_river(user=self.user)
+
+        url = detail_url(river.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(River.objects.filter(id=river.id).exists())
+
+    def test_recipe_other_users_recipe_error(self):
+        """Test trying to delet another users recipe gives. error."""
+        new_user = create_user(email='user2@example.com', password='test123')
+        river = create_river(user=new_user)
+
+        url = detail_url(river.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(River.objects.filter(id=river.id).exists())
