@@ -19,7 +19,7 @@ class RiverViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Retrieve rivers for authenticated user."""
         # JMR - probably need to get rid of this function to return all rivers.
-        return self.queryset.filter(user=self.request.user).order_by('-id')
+        return self.queryset.filter(owner=self.request.user).order_by('-id')
 
     def get_serializer_class(self):
         """Return the serializer class for request."""
@@ -31,6 +31,6 @@ class RiverViewSet(viewsets.ModelViewSet):
         return self.serializer_class
 
     def perform_create(self, serializer):
-        """Create a new recipe."""
+        """Create a new river."""
         if serializer.is_valid():
-            serializer.save(user=self.request.user)
+            serializer.save(owner=self.request.user)

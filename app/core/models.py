@@ -45,7 +45,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class River(models.Model):
     """River Object"""
-    user = models.ForeignKey(
+    owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
     )

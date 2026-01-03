@@ -58,7 +58,7 @@ class ModelTests(TestCase):
         )
 
         river = models.River.objects.create(
-            user=user,
+            owner=user,
             name='Bear Creek',
             feature='Stream',
             state='AK',

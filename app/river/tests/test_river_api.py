@@ -19,11 +19,11 @@ RIVERS_URL = reverse('river:river-list')
 
 
 def detail_url(river_id):
-    """Create and return a recipe detail URL."""
+    """Create and return a river detail URL."""
     return reverse('river:river-detail', args=[river_id])
 
 
-def create_river(user, **params):
+def create_river(owner, **params):
     """Create and return a sample river"""
     defaults = {
         'name': 'Rogue River',
@@ -40,7 +40,7 @@ def create_river(user, **params):
     }
     defaults.update(params)
 
-    river = River.objects.create(user=user, **defaults)
+    river = River.objects.create(owner=owner, **defaults)
     return river
 
 
@@ -72,8 +72,8 @@ class PrivateRiverApiTests(TestCase):
 
     def test_retrieve_river(self):
         """test_retrieving a list of rivers."""
-        create_river(user=self.user)
-        create_river(user=self.user)
+        create_river(owner=self.user)
+        create_river(owner=self.user)
 
         res = self.client.get(RIVERS_URL)
 
@@ -82,22 +82,22 @@ class PrivateRiverApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_recipe_list_limited_to_user(self):
-        """Test list of recipes is limited to authenticated user."""
+    def test_river_list_limited_to_user(self):
+        """Test list of river is limited to authenticated user."""
         other_user = create_user(email='other.example.com', password='test123')
 
-        create_river(user=other_user)
-        create_river(user=self.user)
+        create_river(owner=other_user)
+        create_river(owner=self.user)
         res = self.client.get(RIVERS_URL)
 
-        rivers = River.objects.filter(user=self.user)
+        rivers = River.objects.filter(owner=self.user)
         serializer = RiverSerializer(rivers, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
     def test_get_river_detail(self):
         """Test get river detail."""
-        river = create_river(user=self.user)
+        river = create_river(owner=self.user)
 
         url = detail_url(river.id)
         res = self.client.get(url)
@@ -107,7 +107,7 @@ class PrivateRiverApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_create_river(self):
-        """Test creating a recipe"""
+        """Test creating a river"""
         coordinates = []
         coordinates.append([-159.55596127142, 63.8967914977418])
         payload = {
@@ -126,12 +126,12 @@ class PrivateRiverApiTests(TestCase):
         river = River.objects.get(id=res.data['id'])
         for k, v in payload.items():
             self.assertEqual(getattr(river, k), v)
-        self.assertEqual(river.user, self.user)
+        self.assertEqual(river.owner, self.user)
 
     def test_partial_update(self):
         """Test partial update of a river."""
         coordinates = [[-159.55596127142, 63.8967914977418]]
-        river = create_river(user=self.user,
+        river = create_river(owner=self.user,
                              name='Owyhee',
                              coordinates=coordinates)
 
@@ -143,12 +143,12 @@ class PrivateRiverApiTests(TestCase):
         river.refresh_from_db()
         self.assertEqual(river.name, payload['name'])
         self.assertEqual(river.coordinates, coordinates)
-        self.assertEqual(river.user, self.user)
+        self.assertEqual(river.owner, self.user)
 
     def test_full_update(self):
         """Test full update of river"""
         river = create_river(
-            user=self.user,
+            owner=self.user,
             feature='Stream',
             state='OR',
             region=1,
@@ -175,23 +175,23 @@ class PrivateRiverApiTests(TestCase):
         river.refresh_from_db()
         for k, v in payload.items():
             self.assertEqual(getattr(river, k), v)
-        self.assertEqual(river.user, self.user)
+        self.assertEqual(river.owner, self.user)
 
     def test_update_user_returns_error(self):
         """Test changing the river user results in an error."""
         new_user = create_user(email='user2@example.com', password='test123')
-        river = create_river(user=self.user)
+        river = create_river(owner=self.user)
 
-        payload = {'user': new_user.id}
+        payload = {'owner': new_user.id}
         url = detail_url(river.id)
         self.client.patch(url, payload)
 
         river.refresh_from_db()
-        self.assertEqual(river.user, self.user)
+        self.assertEqual(river.owner, self.user)
 
-    def test_delete_recipe(self):
-        """Test deleting a recipe succesful."""
-        river = create_river(user=self.user)
+    def test_delete_river(self):
+        """Test deleting a river succesful."""
+        river = create_river(owner=self.user)
 
         url = detail_url(river.id)
         res = self.client.delete(url)
@@ -199,10 +199,10 @@ class PrivateRiverApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(River.objects.filter(id=river.id).exists())
 
-    def test_recipe_other_users_recipe_error(self):
-        """Test trying to delet another users recipe gives. error."""
+    def test_river_other_users_river_error(self):
+        """Test trying to delet another users river gives. error."""
         new_user = create_user(email='user2@example.com', password='test123')
-        river = create_river(user=new_user)
+        river = create_river(owner=new_user)
 
         url = detail_url(river.id)
         res = self.client.delete(url)
