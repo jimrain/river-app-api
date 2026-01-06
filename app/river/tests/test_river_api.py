@@ -11,7 +11,7 @@ from core.models import River
 from rest_framework.utils import json
 
 from river.serializers import (
-    RiverSerializer,
+    # RiverSerializer,
     RiverDetailSerializer,
 )
 
@@ -76,10 +76,10 @@ class PrivateRiverApiTests(TestCase):
 
         res = self.client.get(RIVERS_URL)
 
-        rivers = River.objects.all().order_by('-id')
-        serializer = RiverSerializer(rivers, many=True)
+        # rivers = River.objects.all().order_by('-id')
+        # serializer = RiverSerializer(rivers, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        ## This breaks because of pagination - need to figure that out. 
+        # This breaks because of pagination - need to figure that out.
         # self.assertEqual(res.data, serializer.data)
 
     def test_river_list_not_limited_to_user(self):
