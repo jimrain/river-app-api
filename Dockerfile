@@ -1,4 +1,4 @@
-FROM python:3.9-alpine3.13
+FROM python:3.12-alpine3.23
 LABEL maintainer="Jim Rainville"
 
 ENV PYTHONUNBUFFERED=1
