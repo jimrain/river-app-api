@@ -2,7 +2,6 @@
 Serializers for river APIs
 """
 from rest_framework import serializers
-
 from core.models import River
 
 
