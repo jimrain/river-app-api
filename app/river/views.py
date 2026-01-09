@@ -4,7 +4,7 @@ Views for the River APIs.
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
-# from django_filters import rest_framework as filters
+from rest_framework import filters
 from core.models import River
 from core.permissions import IsOwnerOrReadOnly
 from river import serializers
@@ -14,7 +14,8 @@ class RiverViewSet(viewsets.ModelViewSet):
     """View for manage river APIs"""
     serializer_class = serializers.RiverDetailSerializer
     queryset = River.objects.all()
-    filterset_fields = ('name', 'state')
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'state']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
