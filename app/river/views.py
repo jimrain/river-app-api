@@ -41,10 +41,7 @@ class RiverViewSet(viewsets.ModelViewSet):
         Instantiates and returns the list of permissions
         that this view requires.
         """
-        if self.action == 'list':
-            # All users can list
-            permission_classes = [AllowAny]
-        elif self.action in ['update', 'partial_update',
+        if self.action in ['update', 'partial_update',
                              'destroy', 'retrieve']:
             # Only owner can modify/view detail
             permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
