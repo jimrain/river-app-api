@@ -58,7 +58,7 @@ class PublicRiverAPITests(TestCase):
     def test_list_rivers(self):
         res = self.client.get(RIVERS_URL)
 
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class PrivateRiverApiTests(TestCase):

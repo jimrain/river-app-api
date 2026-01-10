@@ -3,7 +3,7 @@ Views for the River APIs.
 """
 from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 # from rest_framework import filters
 from core.models import River
 from core.permissions import IsOwnerOrReadOnly
@@ -41,8 +41,7 @@ class RiverViewSet(viewsets.ModelViewSet):
         Instantiates and returns the list of permissions
         that this view requires.
         """
-        if self.action in ['update', 'partial_update',
-                             'destroy', 'retrieve']:
+        if self.action in ['update', 'partial_update', 'destroy', 'retrieve']:
             # Only owner can modify/view detail
             permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
         else:
