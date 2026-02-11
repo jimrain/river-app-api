@@ -1,14 +1,14 @@
 """
 Database models.
 """
-from django.conf import settings
-from django.db import models
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.gis.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
+
+from app import settings
 
 
 class UserManager(BaseUserManager):
@@ -54,13 +54,8 @@ class River(models.Model):
     state = models.CharField(max_length=32)
     region = models.IntegerField()
     miles = models.FloatField()
-    geometry_type = models.CharField(max_length=255)
-
-    coordinates = ArrayField(
-        ArrayField(models.FloatField(), size=2),
-        blank=True,
-        null=True
-    )
+    geometry = models.GeometryField()
+    # objects = models.GeoManager() # Use GeoManager for spatial queries
 
     def __str__(self):
         return self.name

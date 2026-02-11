@@ -4,7 +4,7 @@ Test for models
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-
+from django.contrib.gis.geos import LineString
 from core import models
 
 
@@ -57,6 +57,16 @@ class ModelTests(TestCase):
             'testpass123',
         )
 
+        coordinates = [
+            (-159.55596127142, 63.8967914977418),
+            (-159.55629960491, 63.8952464976259),
+            (-159.557151821688, 63.8904670545064),
+            (-159.557229598028, 63.8886909430781),
+            (-159.557166819625, 63.8883009431258),
+            (-159.556745707866, 63.887534832399),
+            (-159.55531792994, 63.885438721782),
+        ]
+        lineString = LineString(coordinates, srid=4326)
         river = models.River.objects.create(
             owner=user,
             name='Bear Creek',
@@ -64,37 +74,7 @@ class ModelTests(TestCase):
             state='AK',
             region=19,
             miles=24.85,
-            geometry_type='LineString',
-            coordinates=[
-                [
-                    -159.55596127142,
-                    63.8967914977418
-                ],
-                [
-                    -159.55629960491,
-                    63.8952464976259
-                ],
-                [
-                    -159.557151821688,
-                    63.8904670545064
-                ],
-                [
-                    -159.557229598028,
-                    63.8886909430781
-                ],
-                [
-                    -159.557166819625,
-                    63.8883009431258
-                ],
-                [
-                    -159.556745707866,
-                    63.887534832399
-                ],
-                [
-                    -159.55531792994,
-                    63.885438721782
-                ],
-            ]
+            geometry=lineString
         )
 
         self.assertEqual(str(river), river.name)

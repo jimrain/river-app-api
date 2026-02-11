@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-
+from django.contrib.gis.geos import LineString, GEOSGeometry
 from core.models import River
 from rest_framework.utils import json
 
@@ -14,6 +14,7 @@ from river.serializers import (
     # RiverSerializer,
     RiverDetailSerializer,
 )
+
 
 RIVERS_URL = reverse('river:river-list')
 
@@ -25,19 +26,22 @@ def detail_url(river_id):
 
 def create_river(owner, **params):
     """Create and return a sample river"""
+
+    coordinates = [
+        (-159.55596127142, 63.8967914977418),
+        (-159.55629960491, 63.8952464976259),
+        (-159.557151821688, 63.8904670545064),
+    ]
+    lineString = LineString(coordinates, srid=4326)
     defaults = {
         'name': 'Rogue River',
         'feature': 'Stream',
         'state': 'OR',
         'miles': 47.3,
         'region': 1,
-        'geometry_type': 'LineString',
-        'coordinates': [
-            [-159.55596127142, 63.8967914977418],
-            [-159.55629960491, 63.8952464976259],
-            [-159.557151821688, 63.8904670545064],
-        ]
-    }
+        'geometry': lineString
+        }
+
     defaults.update(params)
 
     river = River.objects.create(owner=owner, **defaults)
@@ -109,16 +113,22 @@ class PrivateRiverApiTests(TestCase):
 
     def test_create_river(self):
         """Test creating a river"""
-        coordinates = []
-        coordinates.append([-159.55596127142, 63.8967914977418])
+        # coordinates = []
+        # coordinates.append([-159.55596127142, 63.8967914977418])
         payload = {
             "name": 'Test River',
             "feature": 'Stream',
             "state": 'OR',
             "region": 1,
             "miles": 47.3,
-            "geometry_type": 'LineString',
-            "coordinates": coordinates,
+            "geometry": {
+                'type': 'LineString',
+                'coordinates': [
+                    [-159.55596127142, 63.8967914977418],
+                    [-159.55629960491, 63.8952464976259],
+                    [-159.557151821688, 63.8904670545064],
+                ]
+            }
         }
         res = self.client.post(RIVERS_URL, json.dumps(payload),
                                content_type='application/json')
@@ -126,15 +136,94 @@ class PrivateRiverApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         river = River.objects.get(id=res.data['id'])
         for k, v in payload.items():
+            if k != 'geometry':
+                self.assertEqual(getattr(river, k), v)
+            else:
+                geom_from_json = GEOSGeometry(json.dumps(v))
+                db_geo = getattr(river, k)
+                assert (db_geo.equals(geom_from_json))
+        self.assertEqual(river.owner, self.user)
+
+
+def test_create_river_multiline(self):
+    """Test creating a river"""
+    # coordinates = []
+    # coordinates.append([-159.55596127142, 63.8967914977418])
+    payload = {
+        "name": 'Test River',
+        "feature": 'Stream',
+        "state": 'OR',
+        "region": 1,
+        "miles": 47.3,
+        "geometry": {
+            'type': 'MultiLineString',
+            'coordinates': [
+                [
+                    [-159.55596127142, 63.8967914977418],
+                    [-159.55629960491, 63.8952464976259],
+                    [-159.557151821688, 63.8904670545064],
+                ],
+                [
+                    [-159.55598127142, 63.8967914977418],
+                    [-159.55628960491, 63.8952464976259],
+                    [-159.557181821688, 63.8904670545064],
+                ],
+            ]
+        }
+    }
+    res = self.client.post(RIVERS_URL, json.dumps(payload),
+                           content_type='application/json')
+
+    self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+    river = River.objects.get(id=res.data['id'])
+    for k, v in payload.items():
+        if k != 'geometry':
             self.assertEqual(getattr(river, k), v)
+        else:
+            geom_from_json = GEOSGeometry(json.dumps(v))
+            db_geo = getattr(river, k)
+            assert (db_geo.equals(geom_from_json))
+    self.assertEqual(river.owner, self.user)
+
+    def test_create_river_point(self):
+        """Test creating a river"""
+        # coordinates = []
+        # coordinates.append([-159.55596127142, 63.8967914977418])
+        payload = {
+            "name": 'Test River 2',
+            "feature": 'Stream',
+            "state": 'OR',
+            "region": 1,
+            "miles": 47.3,
+            "geometry": {
+                'type': 'Point',
+                'coordinates': [-159.55596127142, 63.8967914977418]
+            }
+        }
+        res = self.client.post(RIVERS_URL, json.dumps(payload),
+                               content_type='application/json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        river = River.objects.get(id=res.data['id'])
+        for k, v in payload.items():
+            if k != 'geometry':
+                self.assertEqual(getattr(river, k), v)
+            else:
+                geom_from_json = GEOSGeometry(json.dumps(v))
+                db_geo = getattr(river, k)
+                assert (db_geo.equals(geom_from_json))
         self.assertEqual(river.owner, self.user)
 
     def test_partial_update(self):
         """Test partial update of a river."""
-        coordinates = [[-159.55596127142, 63.8967914977418]]
+        coordinates = [
+            (-159.55596127142, 63.8967914977418),
+            (-159.55629960491, 63.8952464976259),
+        ]
+        lineString = LineString(coordinates, srid=4326)
         river = create_river(owner=self.user,
                              name='Owyhee',
-                             coordinates=coordinates)
+                             geometry=lineString)
 
         payload = {'name': 'Deschutes'}
         url = detail_url(river.id)
@@ -142,21 +231,30 @@ class PrivateRiverApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         river.refresh_from_db()
-        self.assertEqual(river.name, payload['name'])
-        self.assertEqual(river.coordinates, coordinates)
+        for k, v in payload.items():
+            if k != 'geometry':
+                self.assertEqual(getattr(river, k), v)
+            else:
+                geom_from_json = GEOSGeometry(json.dumps(v))
+                db_geo = getattr(river, k)
+                assert (db_geo.equals(geom_from_json))
         self.assertEqual(river.owner, self.user)
 
     def test_full_update(self):
         """Test full update of river"""
+        coordinates = [
+            (-159.55596127142, 63.8967914977418),
+            (-159.55629960491, 63.8952464976259),
+        ]
+        lineString = LineString(coordinates, srid=4326)
         river = create_river(
             owner=self.user,
             feature='Stream',
             state='OR',
             region=1,
             miles=47.3,
-            geometry_type='LineString',
             name='Owyhee',
-            coordinates=[[-159.55596127142, 63.8967914977418]],
+            geometry=lineString,
         )
 
         payload = {
@@ -165,8 +263,12 @@ class PrivateRiverApiTests(TestCase):
             'state': 'CA',
             "region": 2,
             "miles": 43.7,
-            "geometry_type": 'Point',
-            "coordinates": [[-157.55596127142, 63.8967914977418]],
+            "geometry": {
+                "type": 'LineString',
+                "coordinates": [[-157.55596127142, 63.8967914977418],
+                                [-159.557151821688, 63.8904670545064]]
+            },
+
         }
         url = detail_url(river.id)
         res = self.client.put(url, json.dumps(payload),
@@ -175,7 +277,12 @@ class PrivateRiverApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         river.refresh_from_db()
         for k, v in payload.items():
-            self.assertEqual(getattr(river, k), v)
+            if k != 'geometry':
+                self.assertEqual(getattr(river, k), v)
+            else:
+                geom_from_json = GEOSGeometry(json.dumps(v))
+                db_geo = getattr(river, k)
+                assert (db_geo.equals(geom_from_json))
         self.assertEqual(river.owner, self.user)
 
     def test_update_user_returns_error(self):

@@ -21,9 +21,10 @@ services:
       - DEBUG=1
     depends_on:
       - db
+    platform: linux/amd64
 
   db:
-    image: postgres:14-alpine
+    image: postgis/postgis:15-3.3-alpine
     volumes:
       - dev-db-data:/var/lib/postgresql/data
     environment:
