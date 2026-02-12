@@ -16,6 +16,8 @@ services:
       - CSRF_TRUSTED_ORIGINS=${DJANGO_CSRF_TRUSTED_ORIGINS}
     depends_on:
       - db
+    platform: linux/amd64
+
   db:
     image: postgis/postgis:15-3.3-alpine
     restart: always

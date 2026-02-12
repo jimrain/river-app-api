@@ -2,7 +2,7 @@ Django>=5.2.10,<6.0.1
 djangorestframework>=3.16.0,<3.16.1
 psycopg2>=2.9.10,<2.9.11
 drf-spectacular>=0.28.0,<0.29.0
-# uwsgi>=2.0.30,<2.0.31
+uwsgi>=2.0.30,<2.0.31
 django-filter>=25.2,<26
 djangorestframework-gis>=1.2.0,<1.3
 tzdata

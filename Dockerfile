@@ -12,7 +12,7 @@ WORKDIR /app
 EXPOSE 8000
 
 ARG DEV=false
-RUN apk add --no-cache python3 py3-pip python3-dev geos uwsgi
+RUN apk add --no-cache python3 py3-pip python3-dev geos
 RUN python3 -m venv /py && \
     /py/bin/pip install --upgrade pip && \
     apk add --update --no-cache postgresql-client && \
